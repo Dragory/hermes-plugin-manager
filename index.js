@@ -1,19 +1,28 @@
 const uniq = require('lodash.uniq')
+const diff = require('lodash.difference')
 
 module.exports = {
-  load (bot, commands, onEvent, pluginConfig, serverConfig, serverId, pluginManager) {
+  load (bot, commands, onEvent, serverId, pluginConfig, serverConfig, hermes) {
     function listPlugins (msg) {
       serverConfig.get('enabledPlugins').then(enabledPlugins => {
-        const loadedPlugins = Array.from(pluginManager.getLoadedServerPlugins(serverId).keys())
-        let response = `Enabled plugins: ${enabledPlugins.join(', ')}`
-        response += `\nLoaded plugins: ${loadedPlugins.join(', ')}`
+        const defaultAutoloadPlugins = hermes.getDefaultAutoloadPlugins()
+        const autoloadedPlugins = uniq(enabledPlugins.concat(defaultAutoloadPlugins))
+
+        const loadedPlugins = Array.from(hermes.getLoadedServerPlugins(serverId).keys())
+
+        const availablePlugins = Array.from(hermes.getAvailablePlugins().keys())
+        const availablePluginsDiff = diff(availablePlugins, loadedPlugins)
+
+        let response = `Loaded plugins: ${loadedPlugins.join(', ')}`
+        response += `\nAuto-loaded plugins: ${autoloadedPlugins.join(', ')}`
+        response += `\nAvailable plugins: ${availablePluginsDiff.length > 0 ? availablePluginsDiff.join(', ') : '<all plugins loaded>'}`
 
         msg.channel.createMessage(response)
       })
     }
 
     function enablePlugin (msg, pluginName) {
-      pluginManager.loadServerPlugin(serverId, pluginName)
+      hermes.loadServerPlugin(serverId, pluginName)
         .then(() => {
           serverConfig.get('enabledPlugins').then(enabledPlugins => {
             enabledPlugins.push(pluginName)
@@ -30,7 +39,7 @@ module.exports = {
     }
 
     function disablePlugin (msg, pluginName) {
-      pluginManager.unloadServerPlugin(serverId, pluginName)
+      hermes.unloadServerPlugin(serverId, pluginName)
         .then(() => {
           msg.channel.createMessage(`Plugin '${pluginName}' disabled!`)
         })
