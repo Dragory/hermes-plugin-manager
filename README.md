@@ -1,4 +1,4 @@
-Plugin manager plugin for [hermes](https://github.com/dragory/hermes).
+Plugin manager plugin for [Hermes](https://github.com/dragory/hermes)
 
 Adds the following admin commands:
 
